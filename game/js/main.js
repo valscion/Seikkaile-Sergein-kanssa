@@ -19,9 +19,8 @@ var Sergei = {
   init: function (containerId) {
     "use strict";
 
-    debug.info('Sergei.init() called!');
-    Sergei.game = new Game();
-    Sergei.game.init(containerId);
+    Sergei.game = new Game(containerId);
+    Sergei.game.init();
   },
 
   /**

@@ -6,9 +6,16 @@
  * Konstruktori uudelle pelille
  *
  * @class Pelin toteutus
+ *
+ * @param {String} containerId  Sen DOM-elementin ID, johon kaikki <canvas>-tagit tulevat.
  */
-Game = function () {
+Game = function (containerId) {
   "use strict";
+
+  /**
+   * Pelin container, DOMElement
+   */
+  this.container = document.getElementById(containerId);
 
   /**
     * Onko peli latautumassa vasta
@@ -47,16 +54,14 @@ Game = function () {
 
 /**
  * Pelin alustus.
- *
- * @param {String} containerId  Sen DOM-elementin ID, johon kaikki <canvas>-tagit tulevat.
  */
-Game.prototype.init = function (containerId) {
+Game.prototype.init = function () {
   "use strict";
 
-  var self = this;
+  var g = this;
 
   // Alustetaan asetukset oletuksilla
-  Sergei.extend(this.config, Sergei.defaults);
+  Sergei.extend(g.config, Sergei.defaults);
 
   // Ladataan kuvat
   Sergei.loadImages([
@@ -64,39 +69,16 @@ Game.prototype.init = function (containerId) {
     'stages/00_verstas.png'
   ], function (images) {
     // Kun tätä funktiota kutsutaan, on kaikki kuvat ladattu.
-    var bgShape,
-        bgLayer = new Kinetic.Layer('background');
-
-    self.images = images;
-    self.loading = false;
-
-    // Asetetaan pelin tausta, jota ei tarvitse päivittää koko ajan
-    self.background = new Kinetic.Stage(containerId, self.config.width, self.config.height);
-
-    // Taustakuvan Kinetic.Shape
-    bgShape = new Kinetic.Shape(function () {
-      // Tämä hoitaa bgShape:n piirron
-      var context = this.getContext();
-      context.drawImage(self.images['stages/00_verstas.png'], 0, 0, self.config.width, self.config.height);
-    });
-
-    // Lisätään shape taustakerrokseen
-    bgLayer.add(bgShape);
-
-    // Lisätään taustakerros taustaan
-    self.background.add(bgLayer);
-
-    // Piirretään tausta. Koska tausta ei muutu jatkuvasti, ei piirtoa tarvitse kutsua kuin kerran.
-    self.background.draw();
+    g.initImages(images);
   });
 
   // Käynnistetään peli
-  this.tick(Date.now());
+  g.tick(Date.now());
 
   // Tulostetaan FPS vasempaan yläkulmaan sekunnin välein
-  this._fpsCounter.$obj = jQuery('<div id="fps"></div>').prependTo('body').text('FPS: 0');
+  g._fpsCounter.$obj = jQuery('<div id="fps"></div>').prependTo('body').text('FPS: 0');
   setInterval(function () {
-    self._fpsCounter.$obj.text('FPS: ' + (1000 / self._fpsCounter.frameTime).toFixed(1));
+    g._fpsCounter.$obj.text('FPS: ' + (1000 / g._fpsCounter.frameTime).toFixed(1));
   }, 1000);
 
   debug.info('Sergei - Game initialized');
@@ -112,12 +94,65 @@ Game.prototype.tick = function (time) {
 
   var start = Date.now(),
       diff = start - time,
-      self = this;
+      g = this;
 
   // Lasketaan FPS -- http://stackoverflow.com/a/5111475/1152564
-  this._fpsCounter.frameTime += (diff - this._fpsCounter.frameTime) / 20;
+  g._fpsCounter.frameTime += (diff - g._fpsCounter.frameTime) / 20;
 
   requestAnimFrame(function () {
-    self.tick(start);
+    g.tick(start);
   });
+};
+
+/**
+ * Alustaa kuvat, kun ne on ladattu.
+ *
+ * @param {Object} images  Ladatut kuvat objektissa, jonka kentät ovat kuvien polut ja ne sisältävät
+ *                         ladatut Image()-luokan instanssit.
+ */
+Game.prototype.initImages = function (images) {
+  var g = this,
+      bgLayer = new Kinetic.Layer('background'),
+      bgShape,
+      sergeiShape;
+
+  g.images = images;
+  g.loading = false;
+
+  // Asetetaan pelin tausta, jota ei tarvitse päivittää koko ajan
+  g.background = new Kinetic.Stage(g.container, g.config.width, g.config.height);
+
+  // Taustakuvan Kinetic.Shape
+  bgShape = new Kinetic.Shape(function () {
+    // Tämä hoitaa bgShape:n piirron
+    var context = this.getContext();
+    context.drawImage(g.images['stages/00_verstas.png'], 0, 0, g.config.width, g.config.height);
+  });
+
+  // Sergein Kinetic.Shape
+  sergeiShape = new Kinetic.Shape(function () {
+    var context = this.getContext(),
+        img = g.images['sergei.png'],
+        x = (g.config.width - img.width) / 2,
+        y = (g.config.height - img.height) / 2;
+    context.drawImage(img, x, y, img.width, img.height);
+
+    // Piirretään näkymätön suorakulmio, jotta tähän muotoon voitaisiin tarttua.
+    context.beginPath();
+    context.rect(x, y, img.width, img.height);
+    context.closePath();
+  });
+
+  // Drag 'n' drop Sergeille
+  sergeiShape.draggable(true);
+
+  // Lisätään taustakerroksen ja Sergein Kinetic.Shape-instanssit taustakerrokseen
+  bgLayer.add(bgShape);
+  bgLayer.add(sergeiShape);
+
+  // Lisätään taustakerros taustaan
+  g.background.add(bgLayer);
+
+  // Piirretään tausta. Koska tausta ei muutu jatkuvasti, ei piirtoa tarvitse kutsua kuin kerran.
+  g.background.draw();
 };
