@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>Seikkaile Sergein kanssa</title>
-  <script src="js/lib/kinetic-v3.7.3.min.js">
+  <script src="js/lib/kinetic-v3.7.3.js">
     /**
      * KineticJS JavaScript Library v3.7.3
      * http://www.kineticjs.com/
@@ -16,14 +16,15 @@
   <!-- TODO: Download jQuery using Google CDN -->
   <script src="js/compat.js"></script>
   <script src="js/main.js"></script>
+  <script src="js/game.js"></script>
 </head>
 <body>
   <div id="container">
   </div>
-  
+
   <script>
     jQuery(document).ready(function () {
-      Sergei.init();
+      Sergei.init("container");
     });
   </script>
 </body>
